@@ -1,0 +1,12 @@
+| **GenAI Topic**                             | **Example Demo / Project to Showcase**                                                                                                                         |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Retrieval-Augmented Generation (RAG)**    | Build a **SaaS support chatbot** that pulls answers from product documentation + past support tickets to resolve customer queries.                             |
+| **Workflow Automation with GenAI**          | Prototype an **error log → ticket generator**: logs are ingested, and the LLM auto-creates Jira tickets with severity, owner, and repro steps.                 |
+| **Multi-Agent Systems for SaaS Ops**        | Demo a **“Virtual PM Assistant”** where one agent handles billing questions, another manages feature adoption nudges, and a third analyzes churn signals.      |
+| **Domain-Specific Fine-Tuning**             | Fine-tune a small LLM on anonymized **customer chat + support data** to improve accuracy in resolving SaaS-specific terminology and issues.                    |
+| **Personalization & Dynamic Onboarding**    | Create an **AI-driven onboarding guide** that adapts tutorials and feature walk-throughs based on user persona (admin vs developer) and product usage history. |
+| **Natural Language Analytics (NL → SQL)**   | Demo a **“Chat with your SaaS data”** tool: user asks “Show churn rate for SMB accounts last quarter” → GenAI generates SQL + dashboard output.                |
+| **Generative Analytics & Reporting**        | Generate **monthly business reports** in natural language summarizing KPIs (MRR, churn, NPS) pulled from a SaaS database.                                      |
+| **Responsible & Compliant AI**              | Build a **compliance dashboard** that flags PII leaks, bias in responses, and logs explanations to ensure GDPR/CCPA readiness in GenAI-powered features.       |
+| **Knowledge Management with GenAI**         | Develop a **“Smart Confluence Assistant”** that summarizes product requirement docs and creates meeting-ready executive briefs.                                |
+| **Scalable SaaS Integration (APIs & SDKs)** | Package one of the demos (e.g., RAG chatbot) as a **plug-and-play SaaS SDK**, showing how third-party developers can embed GenAI into their workflows.         |
