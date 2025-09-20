@@ -1,4 +1,3 @@
-
 """
 Event-Driven Data Lineage + GenAI Explanation + ROI Demo
 --------------------------------------------------------
@@ -26,6 +25,8 @@ try:
     import networkx as nx
 except ImportError:
     raise SystemExit("Please install networkx: pip install networkx")
+import wandb
+from pathlib import Path
 
 # ------------- Lineage Event Model (minimal, OpenLineage-inspired) -----------------
 @dataclass
@@ -213,31 +214,111 @@ def compute_roi(i: ROIInputs):
     }
 
 # ------------- Main Demo ----------------------------------------------------------
+
 def main():
-    print("\n=== Event-Driven Data Lineage + GenAI + ROI Demo ===\n")
+    print("=== Event-Driven Data Lineage + GenAI + ROI Demo (with W&B) ===")
+    # Init W&B run
+    run = wandb.init(project="event_lineage_eval", job_type="demo", config={"script": "event_lineage_roi_demo.py"})
+    stage_meta = {}
+
+    # ---------- Stage 1: Build Lineage Graph ----------
+    t0 = time.time()
     G = build_sample_lineage_graph()
+    t1 = time.time()
+    # Metrics
+    num_datasets = len([n for n,d in G.nodes(data=True) if d["type"]=="dataset"])
+    num_processes = len([n for n,d in G.nodes(data=True) if d["type"]=="process"])
+    num_edges = G.number_of_edges()
+    wandb.log({
+        "stage": "lineage_graph",
+        "lineage/num_datasets": num_datasets,
+        "lineage/num_processes": num_processes,
+        "lineage/num_edges": num_edges,
+        "timing/lineage_sec": t1 - t0
+    })
+    # Export a compact JSON of nodes/edges as an artifact for auditability
+    lineage_json = {
+        "nodes": [{"id": n, **({"type": d.get("type")} if isinstance(d, dict) else {})} for n,d in G.nodes(data=True)],
+        "edges": [{"src": u, "dst": v, **({"relation": G.edges[u, v].get("relation")} if isinstance(G.edges[u, v], dict) else {})} for u, v in G.edges()]
+    }
+    out_dir = Path("./artifacts")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "lineage.json"
+    with out_path.open("w") as f:
+        json.dump(lineage_json, f, indent=2)
+    art = wandb.Artifact("lineage_graph", type="lineage")
+    art.add_file(str(out_path))
+    run.log_artifact(art)
+
+    # ---------- Stage 2: Compute path + policies ----------
     target = "db.core.settlement_ledger"
     path = compute_upstream_path(G, target)
     policies = collect_policies_on_path(G, path)
+    path_len = len(path)
+    masking_steps = sum(1 for p in policies if isinstance(p.get("policy"), dict) and str(p["policy"].get("masking","none")).lower() not in ["none","none (raw)","none (processing)"])
+    wandb.log({
+        "stage": "path_and_policies",
+        "lineage/path_length": path_len,
+        "lineage/masking_steps": masking_steps,
+        "lineage/policies_count": len(policies)
+    })
 
     print("Lineage Path (src -> dst):")
     for src, dst in path:
         print(f"  {src} -> {dst}")
 
-    print("\nPolicies along the path:")
+    print("Policies along the path:")
     for p in policies:
         print(f"  {p['run_id']} ({p['job_name']}): {p['policy']} | DQ: {p['dq']}")
 
-    print("\nGenAI Explanation:")
+    # ---------- Stage 3: GenAI Explanation ----------
+    t2 = time.time()
     explanation = genai_explain_lineage(path, policies)
+    t3 = time.time()
+    used_fallback = "Fallback" in explanation
+    wandb.log({
+        "stage": "genai_explanation",
+        "genai/used_fallback": int(used_fallback),
+        "genai/explanation_length": len(explanation),
+        "timing/genai_sec": t3 - t2
+    })
+    try:
+        wandb.log({"genai/explanation_html": wandb.Html(explanation)})
+    except Exception:
+        # Fallback if Html is not supported in your environment
+        wandb.log({"genai/explanation_text": explanation[:2000]})
+
+    print("GenAI Explanation:")
     print(explanation)
 
-    print("\nROI Calculation:")
-    roi = compute_roi(ROIInputs())
+    # ---------- Stage 4: ROI Calculation ----------
+    roi_inputs = ROIInputs()
+    # Log inputs as config for traceability
+    wandb.config.update({
+        "roi/annual_audits": roi_inputs.annual_audits,
+        "roi/hours_per_audit_before": roi_inputs.hours_per_audit_before,
+        "roi/hours_per_audit_after": roi_inputs.hours_per_audit_after,
+        "roi/hourly_fully_loaded_cost": roi_inputs.hourly_fully_loaded_cost,
+        "roi/incidents_per_year": roi_inputs.incidents_per_year,
+        "roi/mttr_hours_before": roi_inputs.mttr_hours_before,
+        "roi/mttr_hours_after": roi_inputs.mttr_hours_after,
+        "roi/violations_prevented_per_year": roi_inputs.violations_prevented_per_year,
+        "roi/cost_per_violation": roi_inputs.cost_per_violation,
+        "roi/platform_cost_per_year": roi_inputs.platform_cost_per_year
+    }, allow_val_change=True)
+
+    t4 = time.time()
+    roi = compute_roi(roi_inputs)
+    t5 = time.time()
+    wandb.log({f"roi/{k}": v for k, v in roi.items()} | {"timing/roi_sec": t5 - t4})
+
+    print("ROI Calculation:")
     for k, v in roi.items():
         print(f"  {k}: {v}")
 
-    print("\nTip: Set OPENAI_API_KEY to upgrade the narrative to a GenAI-generated explanation.")
+    print("Tip: Set OPENAI_API_KEY to upgrade the narrative to a GenAI-generated explanation.")
+
+    wandb.finish()
 
 if __name__ == "__main__":
     main()

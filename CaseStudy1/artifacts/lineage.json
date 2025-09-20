@@ -1,0 +1,64 @@
+{
+  "nodes": [
+    {
+      "id": "topic.payments.txn_events",
+      "type": "dataset"
+    },
+    {
+      "id": "lake.bronze.payments_raw",
+      "type": "dataset"
+    },
+    {
+      "id": "lake.silver.payments_enriched",
+      "type": "dataset"
+    },
+    {
+      "id": "db.core.settlement_ledger",
+      "type": "dataset"
+    },
+    {
+      "id": "run-001",
+      "type": "process"
+    },
+    {
+      "id": "run-002",
+      "type": "process"
+    },
+    {
+      "id": "run-003",
+      "type": "process"
+    }
+  ],
+  "edges": [
+    {
+      "src": "topic.payments.txn_events",
+      "dst": "run-001",
+      "relation": "USED"
+    },
+    {
+      "src": "lake.bronze.payments_raw",
+      "dst": "run-002",
+      "relation": "USED"
+    },
+    {
+      "src": "lake.silver.payments_enriched",
+      "dst": "run-003",
+      "relation": "USED"
+    },
+    {
+      "src": "run-001",
+      "dst": "lake.bronze.payments_raw",
+      "relation": "WROTE"
+    },
+    {
+      "src": "run-002",
+      "dst": "lake.silver.payments_enriched",
+      "relation": "WROTE"
+    },
+    {
+      "src": "run-003",
+      "dst": "db.core.settlement_ledger",
+      "relation": "WROTE"
+    }
+  ]
+}

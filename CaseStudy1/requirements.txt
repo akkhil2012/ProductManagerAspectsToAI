@@ -1,1 +1,2 @@
 pip install networkx openai
+install wandb
