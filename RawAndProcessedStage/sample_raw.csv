@@ -1,0 +1,6 @@
+order_id,customer_email,amount,order_date,status
+1001,alice@example.com,120.50,2025-09-01,shipped
+1002,bob@example.com,89.99,2025-09-02,processing
+1003,charlie@example.com,49.00,2025-09-02,cancelled
+1004,dan@example.com,200.00,2025-09-03,shipped
+1005,emma@example.com,15.00,2025-09-03,processing
