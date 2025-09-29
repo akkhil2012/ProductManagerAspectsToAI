@@ -1,0 +1,24 @@
+curl -X POST http://localhost:8000/classify \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "From: rhea.sharma@acmebank.com\nSubject: Invoice for August\nCard: 4111 1111 1111 1111\nHi team, please route this invoice to Finance.",
+    "metadata": {
+      "source_hint": "email_ingestion",
+      "filename": "rhea_invoice.txt"
+    }
+  }'
+
+
+curl -X POST http://localhost:8000/redact \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Customer: John Doe\nEmail: john.doe@example.com\nPhone: +91 98765-43210\nPAN: ABCDE1234F",
+    "pii": [
+      {"type":"name","text":"John Doe","start":10,"end":18,"confidence":0.7},
+      {"type":"email","text":"john.doe@example.com","start":26,"end":46,"confidence":0.9},
+      {"type":"phone","text":"+91 98765-43210","start":55,"end":71,"confidence":0.8},
+      {"type":"pan","text":"ABCDE1234F","start":78,"end":88,"confidence":0.85}
+    ],
+    "placeholder_fmt": "[PII:{type}]"
+  }'
+
