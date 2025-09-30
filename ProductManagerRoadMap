@@ -1,0 +1,41 @@
+Role of an AI Product Manager
+
+How product management changes when the product is AI-driven (vs. traditional software).
+
+The unique challenges (data, model versioning, explainability, regulatory risk) that AI PMs must manage.
+
+Essential Skills & Competencies
+
+Technical literacy (understanding ML concepts, data pipelines, metrics).
+
+Cross-functional communication (translating between engineers, data scientists, business stakeholders).
+
+Judgment around trade-offs (e.g. accuracy vs latency, bias vs coverage).
+
+User-centric thinking, especially as models can behave unpredictably.
+
+Hiring & Interviewing
+
+What teams look for when hiring an AI PM: balance of product experience + technical grounding.
+
+Suggested interview questions or case problems that test model thinking, fairness, robustness.
+
+How to evaluate candidates’ story of working with data, metrics, ambiguity.
+
+Career Paths & Growth
+
+How to progress as an AI PM: becoming more domain-expert, owning full ML lifecycle.
+
+The possibility of specializing (e.g. in LLMs, computer vision, recommendation systems).
+
+Transitioning to leadership roles or advisory roles.
+
+Advice & Best Practices
+
+Start small: pilot projects, minimal viable models.
+
+Metrics: define clear success criteria, monitor drift, feedback loops.
+
+Ethical & governance awareness: bias, privacy, compliance.
+
+Staying up to date: research papers, tooling, frameworks in AI/ML.
