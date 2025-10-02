@@ -3,6 +3,7 @@ package com.dataplatform.dataingestion.service;
 import com.dataplatform.dataingestion.model.DataIngestionRecord;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface DataIngestionService {
@@ -71,4 +72,9 @@ public interface DataIngestionService {
      * Get count of records by status
      */
     Long getRecordCountByStatus(String status);
+
+    /**
+     * Classify arbitrary text via Python FastAPI
+     */
+    Map<String, Object> classifyText(String text, Boolean hadFile);
 }

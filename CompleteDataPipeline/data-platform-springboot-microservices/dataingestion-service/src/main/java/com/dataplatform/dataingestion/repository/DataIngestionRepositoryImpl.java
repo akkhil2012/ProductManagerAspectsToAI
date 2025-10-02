@@ -19,8 +19,8 @@ public class DataIngestionRepositoryImpl {
     @PersistenceContext
     private EntityManager entityManager;
 
-    @Autowired
-    private DataIngestionRepository dataingestionRepository;
+    //@Autowired
+    //private DataIngestionRepository dataingestionRepository;
 
     public List<DataIngestionRecord> findRecordsWithCustomCriteria(String status, LocalDateTime fromDate) {
         String jpql = "SELECT r FROM DataIngestionRecord r WHERE r.status = :status AND r.createdAt >= :fromDate ORDER BY r.createdAt DESC";

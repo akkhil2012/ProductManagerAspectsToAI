@@ -118,7 +118,7 @@ public class DataIngestionServiceImpl implements DataIngestionService {
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestPayload, headers);
 
             // Call Python FastAPI endpoint
-            String pythonEndpoint = pythonFastApiBaseUrl + "/dataingestion/process";
+            String pythonEndpoint = pythonFastApiBaseUrl+"/dataingestion/process";
             ResponseEntity<Map> response = restTemplate.postForEntity(pythonEndpoint, entity, Map.class);
 
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
@@ -162,7 +162,7 @@ public class DataIngestionServiceImpl implements DataIngestionService {
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestPayload, headers);
 
             // Call Python FastAPI validation endpoint
-            String pythonEndpoint = pythonFastApiBaseUrl + "/dataingestion/validate";
+            String pythonEndpoint = pythonFastApiBaseUrl+"/dataingestion/validate";
             ResponseEntity<Map> response = restTemplate.postForEntity(pythonEndpoint, entity, Map.class);
 
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
@@ -183,7 +183,7 @@ public class DataIngestionServiceImpl implements DataIngestionService {
 
         try {
             // Call Python FastAPI status endpoint
-            String pythonEndpoint = pythonFastApiBaseUrl + "/dataingestion/status/" + recordId;
+            String pythonEndpoint = pythonFastApiBaseUrl+"/dataingestion/status/"+recordId;
             ResponseEntity<Map> response = restTemplate.getForEntity(pythonEndpoint, Map.class);
 
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
@@ -209,4 +209,34 @@ public class DataIngestionServiceImpl implements DataIngestionService {
         logger.info("Getting count of dataingestion records with status: {}", status);
         return dataingestionRepository.countByStatus(status);
     }
+
+       @Override
+       public Map<String, Object> classifyText(String text, Boolean hadFile) {
+           logger.info("Classifying text via Python FastAPI (hadFile={})", hadFile);
+   
+           try {
+               Map<String, Object> requestPayload = new HashMap<>();
+               requestPayload.put("text", text);
+               if (hadFile != null) {
+                   requestPayload.put("had_file", hadFile);
+               }
+   
+               HttpHeaders headers = new HttpHeaders();
+               headers.setContentType(MediaType.APPLICATION_JSON);
+               HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestPayload, headers);
+   
+               String pythonEndpoint = pythonFastApiBaseUrl+"/classify";
+               ResponseEntity<Map> response = restTemplate.postForEntity(pythonEndpoint, entity, Map.class);
+   
+               if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                   //noinspection unchecked
+                   return response.getBody();
+               }
+   
+               throw new RuntimeException("Non-OK response from Python classify API: "+response.getStatusCode());
+           } catch (RestClientException e) {
+               logger.error("Error calling Python FastAPI /classify: {}", e.getMessage());
+               throw new RuntimeException("Failed to classify text via Python API", e);
+           }
+       }
 }

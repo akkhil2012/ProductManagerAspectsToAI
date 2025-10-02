@@ -378,4 +378,50 @@ public class DataIngestionController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
+
+    @PostMapping("/classify")
+     public ResponseEntity<Map<String, Object>> classifyText(@RequestBody Map<String, Object> request) {
+        logger.info("POST request to classify text via Python FastAPI");
+ 
+         try {
+             String text = request.get("text") != null ? request.get("text").toString() : null;
+             if (text == null || text.isEmpty()) {
+                 Map<String, Object> badReq = new HashMap<>();
+                 badReq.put("success", false);
+                 badReq.put("message", "Missing required field: text");
+                 badReq.put("timestamp", LocalDateTime.now());
+                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(badReq);
+             }
+ 
+             Boolean hadFile = null;
+             if (request.containsKey("had_file")) {
+                 Object v = request.get("had_file");
+                 hadFile = (v instanceof Boolean) ? (Boolean) v : Boolean.valueOf(v.toString());
+             } else if (request.containsKey("hadFile")) {
+                 Object v = request.get("hadFile");
+                 hadFile = (v instanceof Boolean) ? (Boolean) v : Boolean.valueOf(v.toString());
+             }
+ 
+             Map<String, Object> result = dataingestionService.classifyText(text, hadFile);
+ 
+             Map<String, Object> response = new HashMap<>();
+             response.put("success", true);
+             response.put("message", "Classification completed successfully");
+             response.put("data", result);
+             response.put("timestamp", LocalDateTime.now());
+ 
+             return ResponseEntity.ok(response);
+ 
+         } catch (Exception e) {
+             logger.error("Error classifying text via Python: {}", e.getMessage());
+ 
+             Map<String, Object> errorResponse = new HashMap<>();
+             errorResponse.put("success", false);
+             errorResponse.put("message", "Failed to classify text via Python");
+             errorResponse.put("error", e.getMessage());
+             errorResponse.put("timestamp", LocalDateTime.now());
+ 
+             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+         }
+     }
 }
