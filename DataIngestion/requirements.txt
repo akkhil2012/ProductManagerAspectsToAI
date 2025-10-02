@@ -1,0 +1,11 @@
+
+streamlit
+openai>=1.40.0
+fastapi
+uvicorn
+pydantic
+python-multipart
+requests
+PyPDF2
+python-docx
+
