@@ -1,0 +1,14 @@
+services:
+  dataingestion:
+    base_url: http://localhost:8081
+    endpoint: /api/v1/dataingestion
+  datadeduplication:
+    base_url: http://localhost:8082
+    endpoint: /api/v1/datadeduplication
+  dataquality:
+    base_url: http://localhost:8083
+    endpoint: /api/v1/dataquality
+http:
+  timeout_seconds: 10
+  retry_attempts: 2
+  retry_backoff_seconds: 1.5
