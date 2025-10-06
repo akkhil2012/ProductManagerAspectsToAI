@@ -1,6 +1,0 @@
-customer_id,order_id,product_name,quantity_sold,price_per_unit,total_sales,order_date
-101,5001,Laptop,1,1200.0,1200.0,2025-09-01
-102,5002,Smartphone,3,800.0,2400.0,2025-09-03
-103,5003,Tablet,2,500.0,1000.0,2025-09-04
-104,5004,Monitor,4,150.0,600.0,2025-09-06
-105,5005,Keyboard,5,40.0,200.0,2025-09-07
