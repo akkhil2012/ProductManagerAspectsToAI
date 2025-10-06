@@ -1,6 +1,0 @@
-order_id,email,amount_usd,order_dt,state
-1001,alice@example.com,120.50,2025-09-01,Shipped
-1002,bob@example.com,89.99,2025-09-02,Processing
-1003,charlie@example.com,49.00,2025-09-02,Cancelled
-1004,dan@example.com,200.00,2025-09-03,Shipped
-1006,emma@example.com,15.00,2025-09-03,Processing
