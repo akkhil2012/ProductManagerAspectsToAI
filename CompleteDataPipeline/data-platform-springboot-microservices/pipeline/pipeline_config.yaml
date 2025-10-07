@@ -8,6 +8,15 @@ services:
   dataquality:
     base_url: http://localhost:8083
     endpoint: /api/v1/dataquality
+  datanormalization:
+    base_url: http://localhost:8084
+    endpoint: /api/v1/datanormalization
+  datastorage:
+    base_url: http://localhost:8085
+    endpoint: /api/v1/datastorage
+  dataconsumption:
+    base_url: http://localhost:8086
+    endpoint: /api/v1/dataconsumption
 http:
   timeout_seconds: 10
   retry_attempts: 2

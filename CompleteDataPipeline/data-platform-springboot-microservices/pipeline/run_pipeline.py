@@ -72,11 +72,17 @@ class PipelineRunner:
         ingestion_result = self._run_ingestion()
         dedup_result = self._run_deduplication(ingestion_result)
         quality_result = self._run_quality(dedup_result)
+        normalization_result = self._run_normalization(quality_result)
+        storage_result = self._run_storage(normalization_result)
+        consumption_result = self._run_consumption(storage_result)
 
         return {
             "ingestion": ingestion_result,
             "deduplication": dedup_result,
             "quality": quality_result,
+            "normalization": normalization_result,
+            "storage": storage_result,
+            "consumption": consumption_result,
         }
 
     # ------------------------------------------------------------------
@@ -154,6 +160,147 @@ class PipelineRunner:
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+    def _run_normalization(self, quality_result: StageResult) -> StageResult:
+        stage_name = "datanormalization"
+        result = StageResult(stage=stage_name)
+
+        for idx, record_entry in enumerate(quality_result.records, start=1):
+            quality_payload = record_entry["payload"]
+            quality_data = json.loads(quality_payload["dataPayload"])
+            quality_status = quality_payload.get("status", "UNKNOWN").upper()
+
+            if quality_status != "VALID":
+                payload = {
+                    "recordId": f"normalize-{quality_data.get('source_record_id', 'unknown')}-{idx:03d}",
+                    "status": "REJECTED",
+                    "dataPayload": json.dumps(
+                        {
+                            **quality_data,
+                            "normalization_notes": "Skipped normalization due to failing quality checks",
+                            "normalization_attempted_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        }
+                    ),
+                }
+            else:
+                normalized_payload = self._normalize_payload(quality_data)
+                payload = {
+                    "recordId": f"normalize-{quality_data['source_record_id']}-{idx:03d}",
+                    "status": "NORMALIZED",
+                    "dataPayload": json.dumps(normalized_payload),
+                }
+
+            LOGGER.debug("Normalization payload %s: %s", idx, payload)
+            response = self._post(stage_name, payload)
+            result.add(payload, response)
+
+        LOGGER.info("Normalization stage processed %s quality records", len(result.records))
+        return result
+
+    def _run_storage(self, normalization_result: StageResult) -> StageResult:
+        stage_name = "datastorage"
+        result = StageResult(stage=stage_name)
+
+        for idx, record_entry in enumerate(normalization_result.records, start=1):
+            normalized_payload = record_entry["payload"]
+            normalized_data = json.loads(normalized_payload["dataPayload"])
+            normalized_status = normalized_payload.get("status", "UNKNOWN").upper()
+
+            status = "STORED" if normalized_status == "NORMALIZED" else "SKIPPED"
+            payload = {
+                "recordId": f"storage-{normalized_data.get('source_record_id', 'unknown')}-{idx:03d}",
+                "status": status,
+                "dataPayload": json.dumps(
+                    {
+                        **normalized_data,
+                        "storage_metadata": {
+                            "stored_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                            "storage_location": "primary-datalake",
+                            "status": status,
+                        },
+                    }
+                ),
+            }
+
+            LOGGER.debug("Storage payload %s: %s", idx, payload)
+            response = self._post(stage_name, payload)
+            result.add(payload, response)
+
+        LOGGER.info("Storage stage attempted to persist %s records", len(result.records))
+        return result
+
+    def _run_consumption(self, storage_result: StageResult) -> StageResult:
+        stage_name = "dataconsumption"
+        result = StageResult(stage=stage_name)
+
+        for idx, record_entry in enumerate(storage_result.records, start=1):
+            storage_payload = record_entry["payload"]
+            storage_data = json.loads(storage_payload["dataPayload"])
+            storage_status = storage_payload.get("status", "UNKNOWN").upper()
+
+            status = "AVAILABLE" if storage_status == "STORED" else "UNAVAILABLE"
+            payload = {
+                "recordId": f"consumption-{storage_data.get('source_record_id', 'unknown')}-{idx:03d}",
+                "status": status,
+                "dataPayload": json.dumps(
+                    {
+                        "source_record_id": storage_data.get("source_record_id"),
+                        "customer_email": storage_data.get("customer_email"),
+                        "purchase_amount": storage_data.get("purchase_amount"),
+                        "currency": storage_data.get("currency"),
+                        "status": status,
+                        "consumption_ready_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        "summary": self._build_consumption_summary(storage_data, storage_status),
+                    }
+                ),
+            }
+
+            LOGGER.debug("Consumption payload %s: %s", idx, payload)
+            response = self._post(stage_name, payload)
+            result.add(payload, response)
+
+        LOGGER.info("Consumption stage prepared %s records", len(result.records))
+        return result
+
+    def _normalize_payload(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        normalized = dict(payload)
+        normalized["currency"] = str(payload.get("currency", "")).upper() or "USD"
+        normalized["status"] = str(payload.get("status", "")).upper() or "UNKNOWN"
+
+        amount = payload.get("purchase_amount")
+        try:
+            normalized["purchase_amount"] = round(float(amount), 2)
+        except (TypeError, ValueError):
+            normalized["purchase_amount"] = 0.0
+
+        items = []
+        for item in payload.get("items", []):
+            items.append(
+                {
+                    "sku": str(item.get("sku", "")).upper(),
+                    "quantity": int(item.get("quantity", 0) or 0),
+                }
+            )
+        normalized["items"] = items
+        normalized["normalized_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        return normalized
+
+    def _build_consumption_summary(self, payload: Dict[str, Any], storage_status: str) -> str:
+        if storage_status != "STORED":
+            return "Record unavailable for consumption due to upstream validation"
+
+        total_items = 0
+        for item in payload.get("items", []):
+            try:
+                total_items += int(item.get("quantity", 0) or 0)
+            except (TypeError, ValueError):
+                continue
+
+        return (
+            f"{total_items} item(s) totaling {payload.get('purchase_amount')} "
+            f"{payload.get('currency', 'USD')}"
+        )
+
     def _evaluate_quality(self, payload: Dict[str, Any]) -> (str, str):
         """Apply lightweight business rules to the deduplicated payload."""
         notes: List[str] = []
