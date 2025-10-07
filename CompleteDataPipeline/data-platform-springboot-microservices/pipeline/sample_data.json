@@ -1,0 +1,44 @@
+[
+  {
+    "source_record_id": "order-1001",
+    "customer_email": "alice@example.com",
+    "purchase_amount": 120.5,
+    "currency": "USD",
+    "status": "NEW",
+    "items": [
+      {"sku": "SKU-001", "quantity": 1},
+      {"sku": "SKU-002", "quantity": 2}
+    ]
+  },
+  {
+    "source_record_id": "order-1002",
+    "customer_email": "bob@example.com",
+    "purchase_amount": 87.0,
+    "currency": "USD",
+    "status": "NEW",
+    "items": [
+      {"sku": "SKU-003", "quantity": 1}
+    ]
+  },
+  {
+    "source_record_id": "order-1001",
+    "customer_email": "alice@example.com",
+    "purchase_amount": 120.5,
+    "currency": "USD",
+    "status": "NEW",
+    "items": [
+      {"sku": "SKU-001", "quantity": 1},
+      {"sku": "SKU-002", "quantity": 2}
+    ]
+  },
+  {
+    "source_record_id": "order-1003",
+    "customer_email": "charlieatexample.com",
+    "purchase_amount": -5,
+    "currency": "USD",
+    "status": "NEW",
+    "items": [
+      {"sku": "SKU-004", "quantity": 1}
+    ]
+  }
+]

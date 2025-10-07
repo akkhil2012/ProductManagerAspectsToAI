@@ -64,6 +64,16 @@ cd dataingestion-service
 mvn spring-boot:run
 ```
 
+### Orchestrate the Services into a Pipeline
+
+Use the Python helper found in `pipeline/run_pipeline.py` to trigger each service sequentially with a single command. The script
+reads `pipeline/pipeline_config.yaml` for endpoint locations and `pipeline/sample_data.json` as example input. Run in simulate
+mode to validate the wiring without starting the Java applications:
+
+```bash
+python pipeline/run_pipeline.py --simulate --log-level DEBUG
+```
+
 ## API Documentation
 
 Each service exposes RESTful APIs at `/api/v1/{service-name}`:
