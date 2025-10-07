@@ -1,10 +1,13 @@
 # Data Platform Orchestration Pipeline
 
-This folder stitches the three Spring Boot microservices in this repository into a single, repeatable data pipeline. The Python script orchestrates the following stages:
+This folder stitches the Spring Boot microservices in this repository into a single, repeatable data pipeline. The Python script orchestrates the following stages:
 
 1. **Data Ingestion Service** – stores the raw events that arrive from external systems.
 2. **Data Deduplication Service** – collapses duplicate events by their original `source_record_id`.
 3. **Data Quality Service** – validates the curated dataset against domain rules before downstream consumption.
+4. **Data Normalization Service** – standardises cleansed data (currency, status, SKU formats) and enriches it with timestamps.
+5. **Data Storage Service** – persists the normalized records and adds storage metadata for lineage and governance.
+6. **Data Consumption Service** – prepares lightweight summaries so analytical consumers can discover which records are ready.
 
 The pipeline uses the services through their REST APIs, which are exposed when the Spring Boot applications run locally (either directly with `mvn spring-boot:run` or through Docker Compose).
 
@@ -13,8 +16,8 @@ The pipeline uses the services through their REST APIs, which are exposed when t
 ```
 pipeline/
 ├── README.md                # This document
-├── pipeline_config.yaml     # Base URLs and HTTP settings for each service
-├── run_pipeline.py          # Python orchestrator
+├── pipeline_config.yaml     # Base URLs and HTTP settings for each service stage
+├── run_pipeline.py          # Python orchestrator for all microservices
 └── sample_data.json         # Example payload with duplicates and quality issues
 ```
 
@@ -46,12 +49,12 @@ pipeline/
 
 - **Configuration Driven:** `pipeline_config.yaml` describes where each microservice runs. Update the URLs if you expose the services on different hosts or ports.
 - **Stage Summaries:** Each stage collects the payload sent to the service and the returned response, which makes it easy to debug the pipeline or feed the results into monitoring dashboards.
-- **Embedded Data Rules:** The orchestrator applies basic business rules in the quality stage (positive purchase amounts and valid email formats). You can extend `_evaluate_quality` with domain-specific checks.
+- **Embedded Data Rules:** The orchestrator applies basic business rules in the quality stage (positive purchase amounts and valid email formats) and enriches successful records with normalization, storage, and consumption metadata.
 - **Sample Dataset:** `sample_data.json` includes duplicates and a purposely invalid record so that the deduplication and quality stages produce meaningful output.
 
 ## Extending the Pipeline
 
-- Add new services by editing `pipeline_config.yaml` and creating another `_run_<stage>` method in `run_pipeline.py`.
+- Add new services by editing `pipeline_config.yaml` and creating another `_run_<stage>` method in `run_pipeline.py`. The current implementation demonstrates chaining ingestion, deduplication, quality, normalization, storage, and consumption services.
 - Replace the inline validation logic with calls to the microservices' `/process` or `/validate` endpoints if you implement additional Python-based workflows.
 - Persist or broadcast the stage results by serialising `StageResult` objects to disk, publishing them to Kafka, or triggering downstream analytics jobs.
 
